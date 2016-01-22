@@ -42,7 +42,7 @@ public class Startup \n\
 
 	return {
 		init: function(callback){
-			var cs = getFuncTemplate("OrleansClient.Initialize();\nreturn TaskDone.Done;")
+			var cs = getFuncTemplate("Orleans.GrainClient.Initialize(\"DevTestClientConfiguration.xml\");\nreturn TaskDone.Done;")
 			edge.func(cs)(null, callback);
 		},
 		call: function(grainType, grainId, grainMethod, arguments, callback){
