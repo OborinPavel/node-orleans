@@ -27,6 +27,7 @@ public class Startup \n\
 		return template
 			.replace("$(grainDll)", options.grainDll)
 			.replace("$(grainNamespace)", options.grainNamespace)
+            .replace("$(clientConfiguration)", options.clientConfiguration)
 			.replace("$(innerCs)", innerCs);
 	}
 
@@ -35,14 +36,15 @@ public class Startup \n\
 	}
 
 	function formatId(grainId){
-		if (typeof grainId === "string") return "Guid.Parse(" + escapeString(grainId) + ")";
+        if (typeof grainId === "string") return escapeString(grainId);
+        if (typeof grainId === "Guid") return grainId;
 		if (Array.isArray(grainId)) return argsToString(grainId);
 		return grainId.toString();
 	}
 
 	return {
 		init: function(callback){
-			var cs = getFuncTemplate("Orleans.GrainClient.Initialize(\"DevTestClientConfiguration.xml\");\nreturn TaskDone.Done;")
+			var cs = getFuncTemplate("Orleans.GrainClient.Initialize(" + escapeString(options.clientConfiguration) + ");\nreturn TaskDone.Done;")
 			edge.func(cs)(null, callback);
 		},
 		call: function(grainType, grainId, grainMethod, arguments, callback){
@@ -53,13 +55,13 @@ public class Startup \n\
 
 			if (hasReturnValue){
 				var innerCs = "\
-				var grain = " + grainType + "Factory.GetGrain(" + formatId(grainId) + ");\n\
+				var grain = GrainClient.GrainFactory.GetGrain<" + grainType + ">(" + formatId(grainId) + ");\n\
 				var result = await grain." + grainMethod + "(" + argsToString(arguments) + ");\n\
 				return result as object;\n\
 				";
 			} else {
 				var innerCs = "\
-				var grain = " + grainType + "Factory.GetGrain(" + formatId(grainId) + ");\n\
+				var grain = GrainClient.GrainFactory.GetGrain<" + grainType + ">(" + formatId(grainId) + ");\n\
 				await grain." + grainMethod + "(" + argsToString(arguments) + ");\n\
 				return null;\n\
 				";
@@ -70,6 +72,3 @@ public class Startup \n\
 		}
 	};
 }
-
-
-
